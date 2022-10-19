@@ -4,6 +4,9 @@ from pptx import Presentation
 import os
 import pandas as pd
 import numpy as np
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Side, Alignment, Border
+from openpyxl.utils import get_column_letter
 
 writer = pd.ExcelWriter(
     r'excelinfo.xlsx', engine='openpyxl')  # 写入excel表格
@@ -62,3 +65,43 @@ for i in files:
             colNumIdx = colNumIdx + colnum
         pptIdx += 1
 writer.save()
+
+
+def reset_color(filename):
+    wb = openpyxl.load_workbook(filename)
+    fill = PatternFill(  # 设置填充样式
+        fill_type='solid',
+        start_color='99ccff')
+    diff_fill = PatternFill(  # 设置不同单元格填充样式
+        fill_type='solid',
+        start_color='FFC0CB')
+    font = Font(size=12, bold=True)
+    border = Border(top=Side(border_style='thin', color='000000'),  # 设置边框样式
+                    bottom=Side(border_style='thin', color='000000'),
+                    left=Side(border_style='thin', color='000000'),
+                    right=Side(border_style='thin', color='000000'))
+    for i in wb.sheetnames:
+        ws = wb[i]
+        ws.sheet_view.showGridLines = False  # 隐藏默认网线
+        for i in range(1, ws.max_column+1):
+            if get_column_letter(i) == 'A':
+                ws.column_dimensions[get_column_letter(i)].width = 20.0
+            else:
+                ws.column_dimensions[get_column_letter(i)].width = 30.0
+        for c in range(1, ws.max_column+1):
+            for r in range(1, ws.max_row+1):  # 添加边框
+                bordercell = ws.cell(r, c)
+                bordercell.border = border
+        for end in range(1, ws.max_column+1):
+            fillcell = ws.cell(1, end)
+            fillcell.fill = fill  # 填充首行
+            fillcell.font = font  # 首行加粗
+        for x in range(2, ws.max_row+1):
+            for y in range(2, ws.max_column+1):
+                if ws.cell(x, 2).value != ws.cell(x, y).value:
+                    diffcell = ws.cell(x, y)
+                    diffcell.fill = diff_fill
+    wb.save(filename)
+
+
+reset_color("excelinfo.xlsx")
