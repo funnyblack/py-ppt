@@ -14,10 +14,10 @@ colNumIdx = 0
 pptIdx = 0
 files = os.listdir('/Users/leslie/py/py-ppt')
 files.sort()
+model_dict = {}
 for i in files:
     if i.endswith(".pptx"):
         pptx = Presentation(i)
-        slideMap = {}  # 创建一个map对象用来存slide内容，方便后续操作
         rowNumIdx = 1
         # 声明字典
         key_value = {}
@@ -38,33 +38,46 @@ for i in files:
                                 row, coloum).text  # 遍历后获取单元格内容
                             cell_list.append(cell)  # 将单元格内容存到列表中
                     key_value[dict_key] = cell_list
+        sorted(key_value)
+        titleCell = []
         if pptIdx == 0:
-            cell_list.append("")
-            cell_list.append(i)
-            table_base = np.array(cell_list).reshape(
+            model_dict = key_value
+            titleCell.append("")
+            titleCell.append(i)
+            table_base = np.array(titleCell).reshape(
                 1, 2)  # 用numpy构建数组
         else:
-            cell_list.append(i)
-            table_base = np.array(cell_list).reshape(
+            titleCell.append(i)
+            table_base = np.array(titleCell).reshape(
                 1, 1)  # 用numpy构建数组
         table = pd.DataFrame(table_base)  # 用pandas构建二维数据
         table.to_excel(
             writer, startrow=0, startcol=colNumIdx, index=False, header=False)  # 存储到表格
         rownum = 0  # 获取表格的行
         colnum = 0  # 获取表格的列
-        for key in sorted(key_value):
-            if pptIdx == 0:
+        if pptIdx == 0:
+            for key in key_value:
                 rownum = int(len(key_value[key]) / 2)
                 colnum = 2
-            else:
-                rownum = len(key_value[key])
+                table_base = np.array(key_value[key]).reshape(
+                    rownum, colnum)  # 用numpy构建数组
+                table = pd.DataFrame(table_base)  # 用pandas构建二维数据
+                table.to_excel(
+                    writer, startrow=rowNumIdx, startcol=colNumIdx, index=False, header=False)  # 存储到表格
+                rowNumIdx = rowNumIdx + rownum
+        else:
+            for key in model_dict:
+                rownum = int(len(model_dict[key]) / 2)
                 colnum = 1
-            table_base = np.array(key_value[key]).reshape(
-                rownum, colnum)  # 用numpy构建数组
-            table = pd.DataFrame(table_base)  # 用pandas构建二维数据
-            table.to_excel(
-                writer, startrow=rowNumIdx, startcol=colNumIdx, index=False, header=False)  # 存储到表格
-            rowNumIdx = rowNumIdx + rownum
+                for index in key_value:
+                    if key == index:
+                        table_base = np.array(key_value[key]).reshape(
+                            rownum, colnum)  # 用numpy构建数组
+                        table = pd.DataFrame(table_base)  # 用pandas构建二维数据
+                        table.to_excel(
+                            writer, startrow=rowNumIdx, startcol=colNumIdx, index=False, header=False)  # 存储到表格
+                        break
+                rowNumIdx = rowNumIdx + rownum
         if pptIdx != 0:
             colNumIdx = colNumIdx + 1
         else:
@@ -93,7 +106,7 @@ def reset_color(filename):
             if get_column_letter(i) == 'A':
                 ws.column_dimensions[get_column_letter(i)].width = 20.0
             else:
-                ws.column_dimensions[get_column_letter(i)].width = 30.0
+                ws.column_dimensions[get_column_letter(i)].width = 50.0
         for c in range(1, ws.max_column+1):
             for r in range(1, ws.max_row+1):  # 添加边框
                 bordercell = ws.cell(r, c)
